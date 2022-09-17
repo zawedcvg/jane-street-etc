@@ -65,6 +65,17 @@ def main():
     while True:
         message = exchange.read_message()
 
+        xlf_constituents = {
+            "BOND" : 0, 
+            "GS" : 1,
+            "WFC" : 2, 
+            "MS" : 3
+        }
+
+        xlf_fair_value, xlf_buy_price, xlf_sell_price = None, None, None
+
+        xlf_constituent_prices = [(None, None) for _ in range(4)]
+
         # Some of the message types below happen infrequently and contain
         # important information to help you understand what your bot is doing,
         # so they are printed in full. We recommend not always printing every
@@ -100,6 +111,58 @@ def main():
                             "vale_ask_price": vale_ask_price,
                         }
                     )
+            
+            if message["symbol"] == "XLF" : 
+                def best_price(side):
+                    if message[side]:
+                        return message[side][0][0]
+                
+                def best_quantity(side):
+                    if message[side]:
+                        return message[side][0][1]
+
+                if best_price("buy") == None and best_price("side") == None : 
+                    continue
+                
+                xlf_buy_price = best_price("buy")
+                xlf_sell_price = best_price("side")
+                xlf_quantities = (best_quantity("buy"), best_quantity("sell"))
+                xlf_fair_value = (best_price("buy") + best_price("side")) / 2
+
+                for c in xlf_constituents.keys() :
+                    xlf_constituent_prices.append((message["buy"][c][0][0], message["sell"][c][0][0]))
+                    xlf_constituent_quantity.append((message["buy"][c][0][1], message["buy"][c][0][1]))
+
+                # buy xlf sell others 
+                run_total = 0
+                for i in xlf_constituents_prices : 
+                    run_total += i[0] - xlf_sell_price
+                
+                if run_total > 10 : 
+                    exchange.send_convert_message(order_id, "XLF", Dir.SELL, size=xlf_quantities[0])
+                
+                # run_total = 0
+                # for xlf_consts:
+                #       run-total += const(buy) - xlf(sell)
+                # if run_total > 10:
+                #       convert xlf to it's constituents
+                
+                # run_total = 0
+                # for xlf_consts:
+                #       run-total += xlf(buy) - const(sell)
+                # if run_total > 10:
+                #       convert xlf to it's constituents // supposedly one command
+                
+
+
+
+
+
+                
+
+
+
+
 
 
 # ~~~~~============== PROVIDED CODE ==============~~~~~
